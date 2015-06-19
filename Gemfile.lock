@@ -1,0 +1,24 @@
+GIT
+  remote: https://github.com/adityagodbole/em-hiredis
+  revision: 5977073cfbc002666cae0baa626a1f76f8c29ad5
+  branch: master
+  specs:
+    em-hiredis (0.3.0)
+      eventmachine (~> 1.0)
+      hiredis (~> 0.5.0)
+
+GEM
+  specs:
+    eventmachine (1.0.7)
+    eventmachine_httpserver (0.2.1)
+    hiredis (0.5.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  em-hiredis!
+  eventmachine_httpserver
+
+BUNDLED WITH
+   1.10.2
