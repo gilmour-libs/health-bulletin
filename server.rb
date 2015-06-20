@@ -1,3 +1,4 @@
+require 'json'
 require 'eventmachine'
 require 'evma_httpserver'
 
@@ -16,8 +17,8 @@ module HTTP
     def process_http_request
       response = EM::DelegatedHttpResponse.new(self)
       response.status = 200
-      response.content_type 'text/html'
-      response.content = '<center><h1>Hi there</h1></center>'
+      response.content_type 'application/json'
+      response.content = JSON.generate({:status => 200})
       response.send_response
     end
   end
