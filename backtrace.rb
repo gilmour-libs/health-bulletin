@@ -3,7 +3,9 @@ require 'net/smtp'
 
 module Backtrace
   class << self
-    PAGERDUTY_SERVICE_KEY = '112bee6cb0ad47b3bb91192705fdc749'
+    # https://datascale.pagerduty.com/services/PHD8R8Y
+    # TODO: Please read this value from Command line or conf file.
+    PAGERDUTY_SERVICE_KEY = '3cf9ee19d2654c0e8c4ace1184ca8ac9'
 
     def connection
       if !(defined?(@@connection) && @@connection)
