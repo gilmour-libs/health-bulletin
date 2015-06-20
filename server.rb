@@ -70,7 +70,7 @@ end
 
 EM.run do
   ErrorKeeper.start EM
-  #CronKeeper.activate_jobs EM
+  CronKeeper.activate_jobs EM
   bind_signals
   EM.start_server '0.0.0.0', 8080, HTTP::Server
 end
