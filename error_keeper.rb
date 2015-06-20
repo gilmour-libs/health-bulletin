@@ -1,5 +1,11 @@
-require "gilmour"
 require_relative "backtrace"
+
+begin
+  require_relative "../gilmour/lib/gilmour"
+  puts "Found local version of gilmour"
+rescue LoadError
+  require "gilmour"
+end
 
 module ErrorKeeper
   GilmourBackend = 'redis'
@@ -18,9 +24,8 @@ module ErrorKeeper
   end
 
   class ErrorSubsciber < Server
-    listen_to Gilmour::ErrorChannel exclusive: true do
-      $stderr.puts request
-      Backtrace.send_traceback(request.body, {})
+    listen_to Gilmour::ErrorChannel, exclusive: true do
+      Backtrace.send_traceback(request, {})
     end
   end
 end

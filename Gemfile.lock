@@ -7,18 +7,17 @@ GIT
       eventmachine (~> 1.0)
       hiredis (~> 0.5.0)
 
-GIT
-  remote: https://github.com/adityagodbole/gilmour.git
-  revision: 5fc235d9806e2972f4d8b6b1b0319023687ec79b
-  branch: next-master
+PATH
+  remote: /Users/piyush/datascale/gilmour
   specs:
-    gilmour (0.1.6)
+    gilmour (0.2.1)
       amqp
       gilmour-em-hiredis
       mash
       redis
 
 GEM
+  remote: https://rubygems.org/
   specs:
     amq-protocol (1.9.2)
     amqp (1.5.0)
@@ -30,7 +29,10 @@ GEM
       eventmachine (~> 1.0)
       hiredis (~> 0.5.0)
     hiredis (0.5.2)
+    json (1.8.3)
     mash (0.1.1)
+    pagerduty (2.0.1)
+      json (>= 1.7.7)
     redis (3.2.1)
 
 PLATFORMS
@@ -40,6 +42,7 @@ DEPENDENCIES
   em-hiredis!
   eventmachine_httpserver
   gilmour!
+  pagerduty
 
 BUNDLED WITH
    1.10.2
