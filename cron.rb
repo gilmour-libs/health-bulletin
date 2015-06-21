@@ -1,3 +1,5 @@
+require "singleton"
+
 HealthInterval = 5
 SubscriberInterval = 5
 
@@ -12,18 +14,58 @@ module Cron
   end
 end
 
-# Check if any of the listeners have maxed out.
-Cron.add_job HealthInterval do
-  client = Subpub.get_client
-  backend = client.get_backend('redis')
+class HealthCron
+  include Singleton
 
-  backend.publisher.hgetall backend.class::RedisHealthKey do |r|
-    known_hosts = Hash.new(0)
-    r.each_slice(2) do |slice|
-      known_hosts[slice[0]] = slice[1]
+  attr_accessor :is_processing
+
+  def run
+    if is_processing == true
+      $stderr.puts 'A health check is already in progress'
+    else
+      is_processing = true
+      begin
+        _run
+      rescue Exception => e
+        $stderr.puts e.message
+        $stderr.puts e.backtrace
+      end
+      is_processing = false
     end
   end
 
+  def _run
+    client = Subpub.get_client
+    backend = client.get_backend('redis')
+
+    backend.publisher.hgetall backend.class::RedisHealthKey do |r|
+      known_hosts = Hash.new(0)
+      r.each_slice(2) do |slice|
+        host = slice[0]
+        known_hosts[host] = "gilmour.health.#{host}"
+      end
+
+      inactive_hosts = []
+
+      known_hosts.each do |host, topic|
+        opts = { :timeout => 60, :confirm_subscriber => true}
+        backend.publish("ping", topic, opts) do |data, code|
+          $stderr.puts "Code => #{code}, Data => #{data}"
+          if code != 200
+            inactive_hosts.push(host)
+          end
+        end
+      end
+
+      $stderr.puts "Inactive Hosts: #{inactive_hosts}"
+    end
+  end
+end
+
+# Check if any of the listeners have maxed out.
+Cron.add_job HealthInterval do
+  runner = HealthCron.instance
+  runner.run
 end
 
 Cron.add_job SubscriberInterval do
