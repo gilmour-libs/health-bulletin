@@ -2,8 +2,8 @@ require 'json'
 require 'eventmachine'
 require 'evma_httpserver'
 
-require_relative "./cron_keeper"
-require_relative "./error_keeper"
+require_relative "./cron"
+require_relative "./subpub"
 
 module HTTP
   class Server < EM::Connection
@@ -28,20 +28,17 @@ module HTTP
   end
 end
 
-module ErrorKeeper
-  class << self
-    def start(event_machine)
-      Server.new
-    end
+module Subpub
+  def self.start(event_machine)
+    client = Subpub.get_client
+    client.activate
   end
 end
 
-module CronKeeper
-  class << self
-    def activate_jobs(event_machine)
-      @@jobs.each do |val|
-        EM.add_periodic_timer(val[:interval], &val[:handler])
-      end
+module Cron
+  def self.activate_jobs(event_machine)
+    @@jobs.each do |val|
+      EM.add_periodic_timer(val[:interval], &val[:handler])
     end
   end
 end
@@ -69,8 +66,8 @@ def bind_signals
 end
 
 EM.run do
-  ErrorKeeper.start EM
-  CronKeeper.activate_jobs EM
+  Subpub.start EM
+  Cron.activate_jobs EM
   bind_signals
   EM.start_server '0.0.0.0', 8080, HTTP::Server
 end
