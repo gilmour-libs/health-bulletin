@@ -17,20 +17,12 @@ end
 class HealthCron
   include Singleton
 
-  attr_accessor :is_processing
-
   def run
-    if is_processing == true
-      $stderr.puts 'A health check is already in progress'
-    else
-      is_processing = true
-      begin
-        _run
-      rescue Exception => e
-        $stderr.puts e.message
-        $stderr.puts e.backtrace
-      end
-      is_processing = false
+    begin
+      _run
+    rescue Exception => e
+      $stderr.puts e.message
+      $stderr.puts e.backtrace
     end
   end
 
@@ -40,24 +32,42 @@ class HealthCron
 
     backend.publisher.hgetall backend.class::RedisHealthKey do |r|
       known_hosts = Hash.new(0)
+
       r.each_slice(2) do |slice|
         host = slice[0]
         known_hosts[host] = "gilmour.health.#{host}"
       end
 
-      inactive_hosts = []
+      if known_hosts.length > 0
+        @lock = Mutex.new
+        inactive_hosts = []
 
-      known_hosts.each do |host, topic|
-        opts = { :timeout => 60, :confirm_subscriber => true}
-        backend.publish("ping", topic, opts) do |data, code|
-          $stderr.puts "Code => #{code}, Data => #{data}"
-          if code != 200
-            inactive_hosts.push(host)
+        result = 0
+
+        known_hosts.each do |host, topic|
+          $stderr.puts "Health check for: #{host}, Topic: #{topic}"
+
+          opts = { :timeout => 60, :confirm_subscriber => true}
+          backend.publish("ping", topic, opts) do |data, code|
+            @lock.synchronize do
+              if code != 200
+                inactive_hosts.push(host)
+              end
+              result += 1
+            end
           end
         end
-      end
 
-      $stderr.puts "Inactive Hosts: #{inactive_hosts}"
+        Thread.new {
+          loop {
+            sleep 1
+            if result >= known_hosts.length
+              $stderr.puts "Inactive Hosts: #{inactive_hosts}"
+              break
+            end
+          }
+        }
+      end
     end
   end
 end

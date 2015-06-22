@@ -1,11 +1,13 @@
 require 'pagerduty'
 require 'net/smtp'
 
+require_relative 'config'
+
 module Backtrace
   class << self
+    puts Config
     # https://datascale.pagerduty.com/services/PHD8R8Y
-    # TODO: Please read this value from Command line or conf file.
-    PAGERDUTY_SERVICE_KEY = '3cf9ee19d2654c0e8c4ace1184ca8ac9'
+    PAGERDUTY_SERVICE_KEY = Config["pager_duty_key"]
 
     def connection
       if !(defined?(@@connection) && @@connection)

@@ -1,5 +1,6 @@
 require "singleton"
 
+require_relative "./config"
 require_relative "./backtrace"
 
 begin
@@ -13,7 +14,7 @@ module Subpub
   GilmourBackend = 'redis'
   # TODO: Please read this Flag from Command line or conf file.
   #
-  BroadcastErrors = false
+  BroadcastErrors = Config["send_backtrace"]
 
   def self.get_client
     SubpubClient.instance
