@@ -50,3 +50,5 @@ else
   yaml_content = File.read(options[:config_file])
   Config = Config.merge(YAML.load(yaml_content))
 end
+
+Config["essential_topics"] ||= []

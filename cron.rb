@@ -4,6 +4,8 @@ HealthInterval = 5
 SubscriberInterval = 5
 
 require_relative "./subpub"
+require_relative "./config"
+require_relative "./wait_group"
 
 module Cron
   @@jobs = []
@@ -14,9 +16,7 @@ module Cron
   end
 end
 
-class HealthCron
-  include Singleton
-
+class BaseCron
   def run
     begin
       _run
@@ -25,6 +25,38 @@ class HealthCron
       $stderr.puts e.backtrace
     end
   end
+end
+
+class TopicCron < BaseCron
+  include Singleton
+
+  def _run
+    client = Subpub.get_client
+    backend = client.get_backend('redis')
+
+    if Config["essential_topics"].length
+      essential_topics = []
+
+      wg = WaitGroup.new
+      wg.add Config["essential_topics"].length
+
+      Config["essential_topics"].each do |topic|
+        backend.publisher.pubsub('numsub', topic) do |_, num|
+          essential_topics.push(topic) if num == 0
+          wg.done
+        end
+      end
+
+      wg.wait do
+        $stderr.puts "Essential topics missing: #{essential_topics}"
+      end
+    end
+
+  end
+end
+
+class HealthCron < BaseCron
+  include Singleton
 
   def _run
     client = Subpub.get_client
@@ -39,34 +71,23 @@ class HealthCron
       end
 
       if known_hosts.length > 0
-        @lock = Mutex.new
         inactive_hosts = []
 
-        result = 0
+        wg = WaitGroup.new
+        wg.add known_hosts.length
 
         known_hosts.each do |host, topic|
-          $stderr.puts "Health check for: #{host}, Topic: #{topic}"
-
           opts = { :timeout => 60, :confirm_subscriber => true}
           backend.publish("ping", topic, opts) do |data, code|
-            @lock.synchronize do
-              if code != 200
-                inactive_hosts.push(host)
-              end
-              result += 1
-            end
+            inactive_hosts.push(host) if code != 200
+            wg.done
           end
         end
 
-        Thread.new {
-          loop {
-            sleep 1
-            if result >= known_hosts.length
-              $stderr.puts "Inactive Hosts: #{inactive_hosts}"
-              break
-            end
-          }
-        }
+        wg.wait do
+          $stderr.puts "Inactive Hosts: #{inactive_hosts}"
+        end
+
       end
     end
   end
@@ -79,12 +100,6 @@ Cron.add_job HealthInterval do
 end
 
 Cron.add_job SubscriberInterval do
-  # Check whether there are active subscribers for all non-wildcard topics
-  # promised by listeners.
-  # For each listener, confirm that there is atleast one subscriber
-  # for all topics that listener promises to listen to
-
-  #con = DsRedis.connection
-  #puts con
-  puts "Ensuring Subscribers"
+  runner = TopicCron.instance
+  runner.run
 end
