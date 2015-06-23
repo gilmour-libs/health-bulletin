@@ -1,7 +1,8 @@
+require "logger"
 require "singleton"
 
 HealthInterval = 5
-SubscriberInterval = 5
+SubscriberInterval = 10
 
 require_relative "./subpub"
 require_relative "./config"
@@ -17,6 +18,25 @@ module Cron
 end
 
 class BaseCron
+  def make_logger
+    logger = Logger.new(STDERR)
+    original_formatter = Logger::Formatter.new
+    loglevel =  ENV["LOG_LEVEL"] ? ENV["LOG_LEVEL"].to_sym : :warn
+    logger.level = Gilmour::LoggerLevels[loglevel] || Logger::WARN
+    logger.formatter = proc do |severity, datetime, progname, msg|
+      log_msg = original_formatter.call(severity, datetime, @sender, msg)
+      @log_stack.push(log_msg)
+      log_msg
+    end
+    logger
+  end
+
+  def initialize
+    client = Subpub.get_client
+    @backend = client.get_backend('redis')
+    @logger = make_logger
+  end
+
   def run
     begin
       _run
@@ -25,15 +45,36 @@ class BaseCron
       $stderr.puts e.backtrace
     end
   end
+
+  def emit_error(description, extra=nil)
+    if !description.is_a?(String)
+      $stderr.puts "Description must be a valid non-empty string"
+      return
+    end
+
+    opts = {
+      :topic => self.class.name,
+      :description => description,
+      :sender => @backend.ident,
+      :multi_process => false,
+      :code => 500
+    }.merge(extra || {})
+
+    # Publish all errors on gilmour.error
+    # This may or may not have a listener based on the configuration
+    # supplied at setup.
+    opts[:timestamp] = Time.now.getutc
+    payload = {:traceback => @log_stack, :extra => opts}
+    puts "Payload: #{payload}"
+    @backend.publish(payload, Gilmour::ErrorChannel, {}, 500)
+  end
+
 end
 
 class TopicCron < BaseCron
   include Singleton
 
   def _run
-    client = Subpub.get_client
-    backend = client.get_backend('redis')
-
     if Config["essential_topics"].length
       essential_topics = []
 
@@ -41,14 +82,16 @@ class TopicCron < BaseCron
       wg.add Config["essential_topics"].length
 
       Config["essential_topics"].each do |topic|
-        backend.publisher.pubsub('numsub', topic) do |_, num|
+        @backend.publisher.pubsub('numsub', topic) do |_, num|
           essential_topics.push(topic) if num == 0
           wg.done
         end
       end
 
       wg.wait do
-        $stderr.puts "Essential topics missing: #{essential_topics}"
+        if essential_topics.length
+          emit_error "Required topics do not have any subscriber. #{essential_topics}"
+        end
       end
     end
 
@@ -59,10 +102,7 @@ class HealthCron < BaseCron
   include Singleton
 
   def _run
-    client = Subpub.get_client
-    backend = client.get_backend('redis')
-
-    backend.publisher.hgetall backend.class::RedisHealthKey do |r|
+    @backend.publisher.hgetall @backend.class::RedisHealthKey do |r|
       known_hosts = Hash.new(0)
 
       r.each_slice(2) do |slice|
@@ -78,14 +118,16 @@ class HealthCron < BaseCron
 
         known_hosts.each do |host, topic|
           opts = { :timeout => 60, :confirm_subscriber => true}
-          backend.publish("ping", topic, opts) do |data, code|
+          @backend.publish("ping", topic, opts) do |data, code|
             inactive_hosts.push(host) if code != 200
             wg.done
           end
         end
 
         wg.wait do
-          $stderr.puts "Inactive Hosts: #{inactive_hosts}"
+          if inactive_hosts.length
+            emit_error "Unreachable hosts: #{inactive_hosts}"
+          end
         end
 
       end
@@ -94,10 +136,10 @@ class HealthCron < BaseCron
 end
 
 # Check if any of the listeners have maxed out.
-Cron.add_job HealthInterval do
-  runner = HealthCron.instance
-  runner.run
-end
+#Cron.add_job HealthInterval do
+#  runner = HealthCron.instance
+#  runner.run
+#end
 
 Cron.add_job SubscriberInterval do
   runner = TopicCron.instance
