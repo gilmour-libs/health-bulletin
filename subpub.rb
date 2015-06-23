@@ -14,8 +14,6 @@ module Subpub
   GilmourBackend = 'redis'
   # TODO: Please read this Flag from Command line or conf file.
   #
-  BroadcastErrors = Config["send_backtrace"]
-
   def self.get_client
     SubpubClient.instance
   end
@@ -24,23 +22,24 @@ module Subpub
     include Singleton
     include Gilmour::Base
 
+    @@reporter = PagerDutySender.new(Config["error_reporting"])
+
     def activate
       enable_backend(GilmourBackend, { })
       registered_subscribers.each do |sub|
         sub.backend = 'redis'
       end
 
-      $stderr.puts "Starting server. This will start listening to Error messages."
       start()
     end
   end
 
   class ErrorSubsciber < SubpubClient
-    listen_to Gilmour::ErrorChannel, exclusive: true do
-      if Subpub::BroadcastErrors
-        Backtrace.send_traceback(request, {})
-      end
 
+    $stderr.puts "Listening to #{Gilmour::ErrorChannel}"
+    listen_to Gilmour::ErrorChannel do
+      @@reporter.send_traceback(request.body)
     end
+
   end
 end

@@ -34,8 +34,14 @@ end
 DefaultConfig = <<-EOF
 ---
 essential_topics:
-pager_duty_key:
-send_backtrace: false
+
+health_reporting:
+  pager_duty_token:
+  enabled: true
+
+error_reporting:
+  pager_duty_token:
+  enabled: true
 EOF
 
 options = make_options

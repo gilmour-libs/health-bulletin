@@ -1,3 +1,4 @@
+require "mash"
 require "logger"
 require "singleton"
 
@@ -7,6 +8,7 @@ SubscriberInterval = 10
 require_relative "./subpub"
 require_relative "./config"
 require_relative "./wait_group"
+require_relative "./backtrace"
 
 module Cron
   @@jobs = []
@@ -18,6 +20,8 @@ module Cron
 end
 
 class BaseCron
+  @@reporter = PagerDutySender.new(Config["health_reporting"])
+
   def make_logger
     logger = Logger.new(STDERR)
     original_formatter = Logger::Formatter.new
@@ -65,14 +69,13 @@ class BaseCron
     # supplied at setup.
     opts[:timestamp] = Time.now.getutc
     payload = {:traceback => @log_stack, :extra => opts}
-    puts "Payload: #{payload}"
-    @backend.publish(payload, Gilmour::ErrorChannel, {}, 500)
+    @@reporter.send_traceback(Mash.new(payload))
   end
 
 end
 
 class TopicCron < BaseCron
-  include Singleton
+  #include Singleton
 
   def _run
     if Config["essential_topics"].length
@@ -90,7 +93,9 @@ class TopicCron < BaseCron
 
       wg.wait do
         if essential_topics.length
-          emit_error "Required topics do not have any subscriber. #{essential_topics}"
+          msg = "Required topics do not have any subscriber."
+          extra = {"topics" => essential_topics}
+          emit_error msg, extra
         end
       end
     end
@@ -99,7 +104,7 @@ class TopicCron < BaseCron
 end
 
 class HealthCron < BaseCron
-  include Singleton
+  #include Singleton
 
   def _run
     @backend.publisher.hgetall @backend.class::RedisHealthKey do |r|
@@ -126,7 +131,9 @@ class HealthCron < BaseCron
 
         wg.wait do
           if inactive_hosts.length
-            emit_error "Unreachable hosts: #{inactive_hosts}"
+            msg = "Unreachable hosts"
+            extra = {"hosts" => inactive_hosts}
+            emit_error msg, extra
           end
         end
 
@@ -136,12 +143,12 @@ class HealthCron < BaseCron
 end
 
 # Check if any of the listeners have maxed out.
-#Cron.add_job HealthInterval do
-#  runner = HealthCron.instance
-#  runner.run
-#end
+Cron.add_job HealthInterval do
+  runner = HealthCron.new
+  runner.run
+end
 
 Cron.add_job SubscriberInterval do
-  runner = TopicCron.instance
+  runner = TopicCron.new
   runner.run
 end
