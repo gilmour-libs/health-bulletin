@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
+gem 'rspec', '~> 3.0'
 gem 'pagerduty'
 gem 'eventmachine_httpserver', :require => 'evma_httpserver'
 gem 'em-hiredis', git: 'https://github.com/adityagodbole/em-hiredis', branch: 'master'

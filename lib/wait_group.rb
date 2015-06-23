@@ -53,24 +53,3 @@ class WaitGroup
     wait_thread(&blk).join
   end
 end
-
-def test
-  wg = WaitGroup.new
-  wg.add 3
-
-  3.times {
-    #wg.done
-    Thread.new {
-      t = 2
-      puts "sleeping for #{t}\n"
-      sleep(t)
-      wg.done
-    }
-  }
-
-  wg.wait_join do
-    puts "yayy done"
-  end
-
-  puts "Ok"
-end

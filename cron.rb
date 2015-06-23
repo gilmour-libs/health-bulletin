@@ -7,8 +7,8 @@ SubscriberInterval = 10
 
 require_relative "./subpub"
 require_relative "./config"
-require_relative "./wait_group"
 require_relative "./backtrace"
+require_relative "./lib/wait_group"
 
 module Cron
   @@jobs = []

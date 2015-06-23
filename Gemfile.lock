@@ -23,6 +23,7 @@ GEM
     amqp (1.5.0)
       amq-protocol (>= 1.9.2)
       eventmachine
+    diff-lcs (1.2.5)
     eventmachine (1.0.7)
     eventmachine_httpserver (0.2.1)
     gilmour-em-hiredis (0.3.0)
@@ -34,6 +35,19 @@ GEM
     pagerduty (2.0.1)
       json (>= 1.7.7)
     redis (3.2.1)
+    rspec (3.2.0)
+      rspec-core (~> 3.2.0)
+      rspec-expectations (~> 3.2.0)
+      rspec-mocks (~> 3.2.0)
+    rspec-core (3.2.3)
+      rspec-support (~> 3.2.0)
+    rspec-expectations (3.2.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.2.0)
+    rspec-mocks (3.2.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.2.0)
+    rspec-support (3.2.2)
 
 PLATFORMS
   ruby
@@ -43,6 +57,7 @@ DEPENDENCIES
   eventmachine_httpserver
   gilmour!
   pagerduty
+  rspec (~> 3.0)
 
 BUNDLED WITH
    1.10.2
