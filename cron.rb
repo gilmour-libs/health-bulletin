@@ -5,13 +5,14 @@ require "singleton"
 require_relative "./subpub"
 require_relative "./backtrace"
 require_relative "./lib/cli"
+require_relative "./lib/logger"
 require_relative "./lib/wait_group"
 
 module Cron
   @@jobs = []
 
   def self.add_job(interval, &blk)
-    $stderr.puts "Registered new handler for every #{interval} seconds"
+    HLogger.info "Registered new handler for every #{interval} seconds"
     @@jobs << {:handler => blk, :interval => interval}
   end
 end
@@ -19,37 +20,22 @@ end
 class BaseCron
   @@reporter = PagerDutySender.new(CLI::Args["health_reporting"])
 
-  def make_logger
-    logger = Logger.new(STDERR)
-    original_formatter = Logger::Formatter.new
-    loglevel =  ENV["LOG_LEVEL"] ? ENV["LOG_LEVEL"].to_sym : :warn
-    logger.level = Gilmour::LoggerLevels[loglevel] || Logger::WARN
-    logger.formatter = proc do |severity, datetime, progname, msg|
-      log_msg = original_formatter.call(severity, datetime, @sender, msg)
-      @log_stack.push(log_msg)
-      log_msg
-    end
-    logger
-  end
-
   def initialize
     client = Subpub.get_client
     @backend = client.get_backend('redis')
-    @logger = make_logger
   end
 
   def run
     begin
       _run
     rescue Exception => e
-      $stderr.puts e.message
-      $stderr.puts e.backtrace
+      HLogger.exception e
     end
   end
 
   def emit_error(description, extra=nil)
     if !description.is_a?(String)
-      $stderr.puts "Description must be a valid non-empty string"
+      HLogger.error "Description must be a valid non-empty string"
       return
     end
 
@@ -65,7 +51,7 @@ class BaseCron
     # This may or may not have a listener based on the configuration
     # supplied at setup.
     opts[:timestamp] = Time.now.getutc
-    payload = {:traceback => @log_stack, :extra => opts}
+    payload = {:traceback => '', :extra => opts}
     @@reporter.send_traceback(Mash.new(payload))
   end
 

@@ -54,6 +54,7 @@ GEM
       rspec-support (~> 3.2.0)
     rspec-support (3.2.2)
     sorcerer (1.0.2)
+    trollop (2.1.2)
 
 PLATFORMS
   ruby
@@ -65,6 +66,7 @@ DEPENDENCIES
   pagerduty
   rspec (~> 3.0)
   rspec-given
+  trollop
 
 BUNDLED WITH
    1.10.2

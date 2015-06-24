@@ -1,5 +1,6 @@
 require 'pagerduty'
 require 'net/smtp'
+require './lib/logger'
 
 class Backtrace
   def initialize(config)
@@ -10,16 +11,15 @@ class Backtrace
 
   def send_traceback(message, &blk)
     if !@enabled
-      $stderr.puts "Skipping alerts because sender is disabled"
+      HLogger.warn "Skipping alerts because sender is disabled"
       return
     end
 
     begin
-      $stderr.puts "Sending traceback..."
+      HLogger.debug "Sending traceback..."
       _send(message, &blk)
     rescue Exception => e
-      $stderr.puts e.message
-      $stderr.puts e.backtrace
+      HLogger.exception e
     end
   end
 
@@ -49,7 +49,7 @@ class PagerDutySender < Backtrace
 
   def _send(body)
     if !@config["pager_duty_token"]
-      $stderr.puts "Missing pager_duty_token in Config. Skipping alerts."
+      HLogger.warn "Missing pager_duty_token in Config. Skipping alerts."
       return
     end
 

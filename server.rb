@@ -5,6 +5,7 @@ require 'evma_httpserver'
 require_relative "./cron"
 require_relative "./subpub"
 require_relative "./lib/cli"
+require_relative "./lib/logger"
 
 module HTTP
   class Server < EM::Connection
@@ -45,13 +46,13 @@ module Cron
 end
 
 def shut_down_em
-  puts "Gracefully shutting down event machine."
+  $stderr.puts "Gracefully shutting down event machine."
 end
 
 def bind_signals
   signal_handler = proc { |signo|
     sig = Signal.signame(signo)
-    puts "Caught #{sig} -> #{signo}, Exiting"
+    $stderr.puts "Caught #{sig} -> #{signo}, Exiting"
     exit
   }
 
@@ -71,5 +72,6 @@ EM.run do
   Cron.activate_jobs EM
   bind_signals
   listen_to = CLI::Args['listen_to']
+  HLogger.warn "Serving on #{listen_to['host']}:#{listen_to['port']}"
   EM.start_server listen_to['host'], listen_to['port'], HTTP::Server
 end

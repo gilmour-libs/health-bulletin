@@ -2,10 +2,11 @@ require "singleton"
 
 require_relative "./backtrace"
 require_relative "./lib/cli"
+require_relative "./lib/logger"
 
 begin
   require_relative "../gilmour/lib/gilmour"
-  puts "Found local version of gilmour"
+  HLogger.debug "Found local version of gilmour"
 rescue LoadError
   require "gilmour"
 end
@@ -48,7 +49,7 @@ module Subpub
 
   class ErrorSubsciber < SubpubClient
 
-    $stderr.puts "Listening to #{Gilmour::ErrorChannel}"
+    HLogger.debug "Listening to #{Gilmour::ErrorChannel}"
     listen_to Gilmour::ErrorChannel do
       @@reporter.send_traceback(request.body)
     end

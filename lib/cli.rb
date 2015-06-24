@@ -1,36 +1,18 @@
-require 'getoptlong'
+require 'trollop'
 require 'yaml'
 
 module CLI
   class << self
     def make_options
-      opts = GetoptLong.new(
-        [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
-        [ '--file', '-f', GetoptLong::REQUIRED_ARGUMENT ]
-      )
-
-      options = {}
-      options[:config_file] = ""
-
-      opts.each do |opt, arg|
-        case opt
-        when '--help'
-          puts <<-EOF
-ruby server.rb ...
-
--h, --help:
-   show help
-
---file x, -f x:
-   Load config from x file
-          EOF
-
-        when '--file'
-          options[:config_file] = arg.to_s
-        end
+      opts = Trollop::options do
+        version "Health Monitor 0.1.0 (c) datascale.io"
+        opt :config, "Read the configurations from here", :type => :string
+        opt :v, "Use verbose logging [info]" #flag
+        opt :vv, "Use very verbose logging [debug]" #flag_mode
       end
 
-      options
+      Trollop::die :config, "must exist" unless File.exist?(opts[:config]) if opts[:config]
+      opts
     end
 
     DefaultConfig = <<-EOF
@@ -39,6 +21,8 @@ essential_topics:
 
 health_check_interval: 60
 topic_check_interval: 60
+
+log_level: warn
 
 redis:
   host: '127.0.0.1'
@@ -62,16 +46,21 @@ error_reporting:
       options = make_options
       config = YAML.load(DefaultConfig)
 
-      if !options[:config_file] || options[:config_file].empty?
+      if !options[:config] || options[:config].empty?
         $stderr.puts "Will use default config"
-      elsif File.exist?(options[:config_file])
-        yaml_content = File.read(options[:config_file])
-        config = config.merge(YAML.load(yaml_content))
       else
-        $stderr.puts "Could not open #{options[:config_file]}"
+        yaml_content = File.read(options[:config])
+        config = config.merge(YAML.load(yaml_content))
       end
 
       config["essential_topics"] ||= []
+
+      if options[:vv]
+        config['log_level'] = 'debug'
+      elsif options[:v]
+        config['log_level'] = 'info'
+      end
+
       config
     end
   end

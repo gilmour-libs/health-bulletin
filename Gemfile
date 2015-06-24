@@ -2,6 +2,8 @@ source 'https://rubygems.org'
 
 gem 'rspec', '~> 3.0'
 
+gem 'trollop'
+
 group :test do
   gem 'rspec-given'
 end
