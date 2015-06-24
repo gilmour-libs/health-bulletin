@@ -25,7 +25,11 @@ module Subpub
     @@reporter = PagerDutySender.new(Config["error_reporting"])
 
     def activate
-      enable_backend(GilmourBackend, { })
+      # Monitor server should not broadcast errors or participate in Health
+      # checks, as this leads to recursion.
+      redis_opts = { 'broadcast_errors' => false, 'health_check' => false}
+      enable_backend(GilmourBackend, redis_opts)
+
       registered_subscribers.each do |sub|
         sub.backend = 'redis'
       end
