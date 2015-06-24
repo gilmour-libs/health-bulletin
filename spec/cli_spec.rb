@@ -21,4 +21,10 @@ describe CLI, '#cli' do
     expect(conf['listen_to']['host']).not_to be_empty
     expect(conf['listen_to']['port']).to be > 8000
   end
+
+  it 'should have valid intervals' do
+    expect(conf['health_check_interval']).to be > 0
+    expect(conf['topic_check_interval']).to be > 0
+  end
+
 end

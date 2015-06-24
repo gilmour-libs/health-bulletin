@@ -2,9 +2,6 @@ require "mash"
 require "logger"
 require "singleton"
 
-HealthInterval = 60
-SubscriberInterval = 60
-
 require_relative "./subpub"
 require_relative "./backtrace"
 require_relative "./lib/cli"
@@ -143,12 +140,12 @@ class HealthCron < BaseCron
 end
 
 # Check if any of the listeners have maxed out.
-Cron.add_job HealthInterval do
+Cron.add_job CLI::Args['health_check_interval'] do
   runner = HealthCron.new
   runner.run
 end
 
-Cron.add_job SubscriberInterval do
+Cron.add_job CLI::Args['topic_check_interval'] do
   runner = TopicCron.new
   runner.run
 end

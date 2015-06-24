@@ -37,6 +37,9 @@ ruby server.rb ...
 ---
 essential_topics:
 
+health_check_interval: 60
+topic_check_interval: 60
+
 listen_to:
   host: '0.0.0.0'
   port: 8080
