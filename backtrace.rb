@@ -1,8 +1,6 @@
 require 'pagerduty'
 require 'net/smtp'
 
-require_relative 'config'
-
 class Backtrace
   def initialize(config)
     @config =  {"enabled" => true}.merge(config || {})

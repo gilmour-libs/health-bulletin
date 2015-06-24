@@ -1,7 +1,7 @@
 require "singleton"
 
-require_relative "./config"
 require_relative "./backtrace"
+require_relative "./lib/cli"
 
 begin
   require_relative "../gilmour/lib/gilmour"
@@ -22,7 +22,7 @@ module Subpub
     include Singleton
     include Gilmour::Base
 
-    @@reporter = PagerDutySender.new(Config["error_reporting"])
+    @@reporter = PagerDutySender.new(CLI::Args["error_reporting"])
 
     def activate
       # Monitor server should not broadcast errors or participate in Health

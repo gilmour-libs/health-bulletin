@@ -6,8 +6,8 @@ HealthInterval = 60
 SubscriberInterval = 60
 
 require_relative "./subpub"
-require_relative "./config"
 require_relative "./backtrace"
+require_relative "./lib/cli"
 require_relative "./lib/wait_group"
 
 module Cron
@@ -20,7 +20,7 @@ module Cron
 end
 
 class BaseCron
-  @@reporter = PagerDutySender.new(Config["health_reporting"])
+  @@reporter = PagerDutySender.new(CLI::Args["health_reporting"])
 
   def make_logger
     logger = Logger.new(STDERR)
@@ -78,13 +78,13 @@ class TopicCron < BaseCron
   #include Singleton
 
   def _run
-    if Config["essential_topics"].length
+    if CLI::Args["essential_topics"].length
       essential_topics = []
 
       wg = WaitGroup.new
-      wg.add Config["essential_topics"].length
+      wg.add CLI::Args["essential_topics"].length
 
-      Config["essential_topics"].each do |topic|
+      CLI::Args["essential_topics"].each do |topic|
         @backend.publisher.pubsub('numsub', topic) do |_, num|
           essential_topics.push(topic) if num == 0
           wg.done
