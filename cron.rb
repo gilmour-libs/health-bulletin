@@ -2,8 +2,8 @@ require "mash"
 require "logger"
 require "singleton"
 
-HealthInterval = 5
-SubscriberInterval = 10
+HealthInterval = 60
+SubscriberInterval = 60
 
 require_relative "./subpub"
 require_relative "./config"
