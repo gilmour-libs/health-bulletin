@@ -4,6 +4,7 @@ require 'evma_httpserver'
 
 require_relative "./cron"
 require_relative "./subpub"
+require_relative "./lib/cli"
 
 module HTTP
   class Server < EM::Connection
@@ -69,5 +70,6 @@ EM.run do
   Subpub.start EM
   Cron.activate_jobs EM
   bind_signals
-  EM.start_server '0.0.0.0', 8080, HTTP::Server
+  listen_to = CLI::Args['listen_to']
+  EM.start_server listen_to['host'], listen_to['port'], HTTP::Server
 end

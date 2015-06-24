@@ -16,4 +16,9 @@ describe CLI, '#cli' do
   it 'should have a map for error_reporting' do
     expect(conf['error_reporting']['enabled']).to eq true
   end
+
+  it 'should have a map for HTTP listening variables' do
+    expect(conf['listen_to']['host']).not_to be_empty
+    expect(conf['listen_to']['port']).to be > 8000
+  end
 end
