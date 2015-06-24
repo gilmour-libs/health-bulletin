@@ -27,4 +27,9 @@ describe CLI, '#cli' do
     expect(conf['topic_check_interval']).to be > 0
   end
 
+  it 'should have valid redis conf' do
+    expect(conf['redis']['host']).not_to be_empty
+    expect(conf['redis']['port']).to be > 0
+    expect(conf['redis']['db']).to be >= 0
+  end
 end

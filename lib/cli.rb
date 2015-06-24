@@ -40,6 +40,11 @@ essential_topics:
 health_check_interval: 60
 topic_check_interval: 60
 
+redis:
+  host: '127.0.0.1'
+  port: 6379
+  db: 0
+
 listen_to:
   host: '0.0.0.0'
   port: 8080

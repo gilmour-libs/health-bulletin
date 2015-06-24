@@ -27,7 +27,15 @@ module Subpub
     def activate
       # Monitor server should not broadcast errors or participate in Health
       # checks, as this leads to recursion.
-      redis_opts = { 'broadcast_errors' => false, 'health_check' => false}
+      redis_args = CLI::Args['redis']
+      redis_opts = {
+        'broadcast_errors' => false,
+        'health_check' => false,
+        'host' => redis_args['host'],
+        'port' => redis_args['port'],
+        'db' => redis_args['db']
+      }
+
       enable_backend(GilmourBackend, redis_opts)
 
       registered_subscribers.each do |sub|
