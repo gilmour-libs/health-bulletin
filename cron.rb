@@ -126,12 +126,18 @@ class HealthCron < BaseCron
 end
 
 # Check if any of the listeners have maxed out.
-Cron.add_job CLI::Args['health_check_interval'] do
-  runner = HealthCron.new
-  runner.run
-end
+#
+if CLI::Args['health_reporting']['enabled'] == true
+  Cron.add_job CLI::Args['health_check_interval'] do
+    runner = HealthCron.new
+    runner.run
+  end
 
-Cron.add_job CLI::Args['topic_check_interval'] do
-  runner = TopicCron.new
-  runner.run
+
+  if CLI::Args['essential_topics'].length > 0
+    Cron.add_job CLI::Args['topic_check_interval'] do
+      runner = TopicCron.new
+      runner.run
+    end
+  end
 end
