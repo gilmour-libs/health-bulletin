@@ -90,7 +90,7 @@ class HealthCron < BaseCron
   #include Singleton
 
   def _run
-    @backend.publisher.hgetall @backend.class::RedisHealthKey do |r|
+    @backend.publisher.hgetall @backend.class::GilmourHealthKey do |r|
       known_hosts = Hash.new(0)
 
       r.each_slice(2) do |slice|
