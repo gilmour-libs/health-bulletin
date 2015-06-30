@@ -7,17 +7,6 @@ GIT
       eventmachine (~> 1.0)
       hiredis (~> 0.5.0)
 
-GIT
-  remote: https://github.com/gilmour-libs/gilmour.git
-  revision: 951ba918f0253c0f6933a827d1252bff9c283789
-  branch: master
-  specs:
-    gilmour (0.2.3)
-      amqp
-      gilmour-em-hiredis
-      mash
-      redis
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -28,7 +17,12 @@ GEM
     diff-lcs (1.2.5)
     eventmachine (1.0.7)
     eventmachine_httpserver (0.2.1)
-    gilmour-em-hiredis (0.3.0)
+    gilmour (0.2.3)
+      amqp
+      gilmour-em-hiredis
+      mash
+      redis
+    gilmour-em-hiredis (0.3.1)
       eventmachine (~> 1.0)
       hiredis (~> 0.5.0)
     given_core (3.7.0)
@@ -64,7 +58,7 @@ PLATFORMS
 DEPENDENCIES
   em-hiredis!
   eventmachine_httpserver
-  gilmour!
+  gilmour (~> 0.2.3)
   pagerduty
   rspec (~> 3.0)
   rspec-given
