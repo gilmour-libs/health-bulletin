@@ -9,7 +9,7 @@ GIT
 
 GIT
   remote: https://github.com/gilmour-libs/gilmour.git
-  revision: f4b037635e9f9016785fd92cda6b34b63ada3390
+  revision: 951ba918f0253c0f6933a827d1252bff9c283789
   branch: master
   specs:
     gilmour (0.2.3)
@@ -64,7 +64,7 @@ PLATFORMS
 DEPENDENCIES
   em-hiredis!
   eventmachine_httpserver
-  gilmour (~> 0.2.3)!
+  gilmour!
   pagerduty
   rspec (~> 3.0)
   rspec-given
