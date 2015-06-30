@@ -11,4 +11,4 @@ end
 gem 'pagerduty'
 gem 'eventmachine_httpserver', :require => 'evma_httpserver'
 gem 'em-hiredis', git: 'https://github.com/adityagodbole/em-hiredis', branch: 'master'
-gem 'gilmour', git: 'https://github.com/gilmour-libs/gilmour.git', branch: 'master'
+gem 'gilmour', '~> 0.2.3', git: 'https://github.com/gilmour-libs/gilmour.git', branch: 'master'

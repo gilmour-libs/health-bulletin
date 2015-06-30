@@ -8,11 +8,11 @@ GIT
       hiredis (~> 0.5.0)
 
 GIT
-  remote: https://github.com/meson10/gilmour.git
-  revision: 3ad6ebe0aa6b678a3c95a9bcfbe0b2dadfef215b
-  branch: health
+  remote: https://github.com/gilmour-libs/gilmour.git
+  revision: f4b037635e9f9016785fd92cda6b34b63ada3390
+  branch: master
   specs:
-    gilmour (0.2.1)
+    gilmour (0.2.3)
       amqp
       gilmour-em-hiredis
       mash
@@ -64,7 +64,7 @@ PLATFORMS
 DEPENDENCIES
   em-hiredis!
   eventmachine_httpserver
-  gilmour!
+  gilmour (~> 0.2.3)!
   pagerduty
   rspec (~> 3.0)
   rspec-given
