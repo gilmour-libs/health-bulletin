@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'rspec', '~> 3.0'
-gem 'gilmour', '~> 0.2.4'
+gem 'gilmour', '~> 0.2.5'
 gem 'trollop'
 
 group :test do

@@ -17,7 +17,7 @@ GEM
     diff-lcs (1.2.5)
     eventmachine (1.0.7)
     eventmachine_httpserver (0.2.1)
-    gilmour (0.2.4)
+    gilmour (0.2.5)
       amqp
       gilmour-em-hiredis
       mash
@@ -58,7 +58,7 @@ PLATFORMS
 DEPENDENCIES
   em-hiredis!
   eventmachine_httpserver
-  gilmour (~> 0.2.4)
+  gilmour (~> 0.2.5)
   pagerduty
   rspec (~> 3.0)
   rspec-given
