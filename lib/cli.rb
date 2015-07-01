@@ -53,6 +53,14 @@ error_reporting:
         config = config.merge(YAML.load(yaml_content))
       end
 
+      if ENV['REDIS_HOST']
+          config["redis"]["host"] = ENV["REDIS_HOST"]
+      end
+
+      if ENV["REDIS_PORT"]
+        config["redis"]["port"] = ENV["REDIS_PORT"].to_i
+      end
+
       config["essential_topics"] ||= []
 
       if options[:vv]
@@ -60,6 +68,8 @@ error_reporting:
       elsif options[:v]
         config['log_level'] = 'info'
       end
+
+      $stderr.puts "Using config: #{config}"
 
       config
     end
