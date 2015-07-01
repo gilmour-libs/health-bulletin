@@ -113,7 +113,7 @@ class HealthCron < BaseCron
         end
 
         wg.wait do
-          if inactive_hosts.length
+          if inactive_hosts.length > 0
             msg = "Unreachable hosts"
             extra = {"hosts" => inactive_hosts}
             emit_error msg, extra
