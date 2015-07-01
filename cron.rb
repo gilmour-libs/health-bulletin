@@ -128,6 +128,7 @@ end
 # Check if any of the listeners have maxed out.
 #
 if CLI::Args['health_reporting']['enabled'] == true
+  HLogger.info "Monitoring Health: Active"
   Cron.add_job CLI::Args['health_check_interval'] do
     runner = HealthCron.new
     runner.run
@@ -135,6 +136,7 @@ if CLI::Args['health_reporting']['enabled'] == true
 
 
   if CLI::Args['essential_topics'].length > 0
+    HLogger.info "Monitoring essential topics: Active"
     Cron.add_job CLI::Args['topic_check_interval'] do
       runner = TopicCron.new
       runner.run
