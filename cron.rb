@@ -27,7 +27,7 @@ module Cron
     end
 
     def emit_error(description)
-      payload = {
+      opts = {
         :topic => self.class.name,
         :description => description,
         :sender => @backend.ident,
@@ -37,6 +37,7 @@ module Cron
         :config => CLI::Args['redis']
       }
 
+      payload = {:traceback => '', :extra => opts}
       @reporter.send_traceback(Mash.new(payload))
     end
 

@@ -55,15 +55,21 @@ class PagerDutySender < Backtrace
     end
 
     extra = body.extra
-    description = incident_key = ''
+    description = body.description
+    incident_key = body.topic
 
     if not extra.nil?
-      incident_key = extra.topic.empty? ? SecureRandom.hex : extra.topic
-      description = extra.description
+      if extra.topic != ""
+        incident_key = extra.topic
+      end
+
+      if extra.description != ""
+        description = extra.description
+      end
     end
 
-    incident_key ||= body.topic
-    description ||= get_description(body.description)
+    incident_key ||= SecureRandom.hex
+    description = get_description description
 
     connection.trigger(
       description,
