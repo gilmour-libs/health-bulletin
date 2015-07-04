@@ -1,3 +1,4 @@
+require "mash"
 require 'pagerduty'
 require 'net/smtp'
 require './lib/logger'
@@ -53,8 +54,10 @@ class PagerDutySender < Backtrace
       return
     end
 
-    extra = body.extra || {}
+    extra = body.extra || Mash.new({})
+
     incident_key = extra.topic.empty? ? SecureRandom.hex : extra.topic
+    incident_key ||= body.topic
 
     description = get_description extra
 
