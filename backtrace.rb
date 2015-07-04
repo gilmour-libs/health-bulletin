@@ -71,14 +71,13 @@ class PagerDutySender < Backtrace
     incident_key ||= SecureRandom.hex
     description = get_description description
 
+    extra['trceback'] = body.traceback
+
     connection.trigger(
       description,
       incident_key: incident_key,
       client:       @name,
-      details:      {
-        traceback: body.traceback,
-        extra: extra
-      }
+      details:      extra
     )
 
     yield if block_given?
