@@ -70,6 +70,7 @@ end
 EM.run do
   Subpub.start EM
   Cron.activate_jobs EM
+  Cron.redis_check
   bind_signals
   listen_to = CLI::Args['listen_to']
   HLogger.warn "Serving on #{listen_to['host']}:#{listen_to['port']}"

@@ -1,3 +1,4 @@
+require 'em-hiredis'
 require "mash"
 require "logger"
 require "singleton"
@@ -11,9 +12,57 @@ require_relative "./lib/wait_group"
 module Cron
   @@jobs = []
 
+  class RedisCheck
+    def threshold
+      latency = CLI::Args['redis_health_interval']
+      frequency = EM::Hiredis.reconnect_timeout
+      latency/frequency
+    end
+
+    def initialize
+      @count = 0
+      client = Subpub.get_client
+      @backend = client.get_backend('redis')
+      @reporter = PagerDutySender.new(CLI::Args["health_reporting"])
+    end
+
+    def emit_error(description)
+      payload = {
+        :topic => self.class.name,
+        :description => description,
+        :sender => @backend.ident,
+        :multi_process => false,
+        :code => 500,
+        :timestamp => Time.now.getutc,
+        :config => CLI::Args['redis']
+      }
+
+      @reporter.send_traceback(Mash.new(payload))
+    end
+
+    def start
+      @backend.publisher.on(:failed) do
+        connection_failure
+      end
+    end
+
+    def connection_failure
+      @count += 1
+      if @count >= threshold
+        @count = 0
+        emit_error "Health monitor cannot connect to Redis"
+      end
+    end
+  end
+
   def self.add_job(interval, &blk)
     HLogger.info "Registered new handler for every #{interval} seconds"
     @@jobs << {:handler => blk, :interval => interval}
+  end
+
+  def self.redis_check
+    monitor = RedisCheck.new
+    monitor.start
   end
 end
 

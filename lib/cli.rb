@@ -19,6 +19,7 @@ module CLI
 ---
 essential_topics:
 
+redis_health_interval: 60
 health_check_interval: 60
 topic_check_interval: 60
 
