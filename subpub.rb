@@ -29,15 +29,19 @@ module Subpub
       # Monitor server should not broadcast errors or participate in Health
       # checks, as this leads to recursion.
       redis_args = CLI::Args['redis']
-      redis_opts = {
-        'broadcast_errors' => false,
-        'health_check' => false,
-        'host' => redis_args['host'],
-        'port' => redis_args['port'],
-        'db' => redis_args['db']
-      }
 
-      enable_backend(GilmourBackend, redis_opts)
+      host = redis_args['host']
+      port = redis_args['port']
+
+      enable_backend(GilmourBackend, {
+        broadcast_errors: false,
+        health_check: false,
+        host: host,
+        port: port,
+        db: redis_args['db']
+      })
+
+      $stderr.puts "Connecting to messenger on #{host}:#{port} ..."
 
       registered_subscribers.each do |sub|
         sub.backend = 'redis'
