@@ -32,8 +32,8 @@ class Backtrace
     Gilmour::Protocol.sanitised_payload message
   end
 
-  def get_description(data)
-    description = data.description.empty? ? "Error caught by #{@name}" : data.description
+  def get_description(description)
+    description ||= "Error caught by #{@name}"
     description[0..1024]
   end
 end
@@ -54,12 +54,16 @@ class PagerDutySender < Backtrace
       return
     end
 
-    extra = body.extra || Mash.new({})
+    extra = body.extra
+    description = incident_key = ''
 
-    incident_key = extra.topic.empty? ? SecureRandom.hex : extra.topic
+    if not extra.nil?
+      incident_key = extra.topic.empty? ? SecureRandom.hex : extra.topic
+      description = extra.description
+    end
+
     incident_key ||= body.topic
-
-    description = get_description extra
+    description ||= get_description(body.description)
 
     connection.trigger(
       description,

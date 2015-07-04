@@ -50,7 +50,7 @@ module Cron
       @count += 1
       if @count >= threshold
         @count = 0
-        emit_error "Health monitor cannot connect to Redis"
+        emit_error 'Health monitor cannot connect to Redis'
       end
     end
   end
