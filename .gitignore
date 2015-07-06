@@ -1,0 +1,8 @@
+
+bin/bundler
+
+bin/htmldiff
+
+bin/ldiff
+
+bin/rspec
