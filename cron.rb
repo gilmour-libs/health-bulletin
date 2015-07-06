@@ -28,20 +28,26 @@ module Cron
 
     def emit_error(description)
       opts = {
-        :topic => self.class.name,
-        :description => description,
-        :sender => @backend.ident,
-        :multi_process => false,
-        :code => 500,
-        :timestamp => Time.now.getutc,
-        :config => CLI::Args['redis']
+        topic: self.class.name,
+        description: description,
+        sender: @backend.ident,
+        multi_process: false,
+        code: 500,
+        timestamp: Time.now.getutc,
+        config: CLI::Args['redis']
       }
 
-      payload = {:traceback => '', :extra => opts}
+      payload = { traceback: '', extra: opts }
       @reporter.send_traceback(Mash.new(payload))
     end
 
     def start
+      if @backend.publisher.nil?
+        #HLogger.debug '....................#...........'
+        emit_error 'Health monitor cannot connect to Redis'
+        exit
+      end
+
       @backend.publisher.on(:failed) do
         connection_failure
       end
@@ -58,7 +64,7 @@ module Cron
 
   def self.add_job(interval, &blk)
     HLogger.info "Registered new handler for every #{interval} seconds"
-    @@jobs << {:handler => blk, :interval => interval}
+    @@jobs << { handler: blk, interval: interval }
   end
 
   def self.redis_check

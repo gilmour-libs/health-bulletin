@@ -68,8 +68,8 @@ def bind_signals
 end
 
 EM.run do
-  Cron.redis_check
   Subpub.start EM
+  Cron.redis_check
   Cron.activate_jobs EM
   bind_signals
   listen_to = CLI::Args['listen_to']
