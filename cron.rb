@@ -125,7 +125,7 @@ class TopicCron < BaseCron
       end
 
       wg.wait do
-        if essential_topics.length
+        if essential_topics.length > 0
           msg = "Required topics do not have any subscriber."
           extra = {"topics" => essential_topics}
           emit_error msg, extra
