@@ -112,7 +112,7 @@ end
 class TopicCron < BaseCron
   def _run
     topics = CLI::Args['essential_topics']
-    return unless topics.is_a?(Arrary) || topics.length <= 0
+    return unless topics.is_a?(Array) || topics.length <= 0
 
     essential_topics = []
 
