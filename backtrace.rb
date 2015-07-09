@@ -1,83 +1,73 @@
-require "mash"
+require 'mash'
 require 'pagerduty'
 require 'net/smtp'
 require './lib/logger'
 
+# Base class for sending all exceptions
 class Backtrace
   def initialize(config)
-    @config =  {"enabled" => true}.merge(config || {})
-    @name = @config["title"]
-    @enabled = @config["enabled"]
+    @config =  { 'enabled' => true }.merge(config || {})
+    @name = @config['title']
+    @enabled = @config['enabled']
   end
 
   def send_traceback(message, &blk)
-    if !@enabled
-      HLogger.warn "Skipping alerts because sender is disabled"
+    unless @enabled
+      HLogger.warn 'Skipping alerts because sender is disabled'
       return
     end
 
     begin
-      HLogger.debug "Sending traceback..."
+      HLogger.debug 'Sending traceback...'
       _send(message, &blk)
     rescue Exception => e
       HLogger.exception e
     end
   end
 
-  def _send(message)
-    raise NotImplementedError.new
+  def _send(_)
+    fail 'Not implemented'
   end
 
   def make_json(message)
     Gilmour::Protocol.sanitised_payload message
   end
 
-  def get_description(description)
+  def get_description(body)
+    description = (body.is_a? Mash) ? body.backtrace : ''
     description ||= "Error caught by #{@name}"
     description[0..1024]
   end
+
+  def get_topic(body)
+    topic = (body.is_a? Mash) ? body.topic : ''
+    topic ||= SecureRandom.hex
+    topic
+  end
 end
 
+# Pager Duty error sender, derived from Backtrace
 class PagerDutySender < Backtrace
   # https://datascale.pagerduty.com/services/PHD8R8Y
 
   def connection
-    if !(defined?(@connection) && @connection)
-      @connection = Pagerduty.new(@config["pager_duty_token"])
+    unless defined?(@connection) && @connection
+      @connection = Pagerduty.new(@config['pager_duty_token'])
     end
     @connection
   end
 
   def _send(body)
-    if !@config["pager_duty_token"]
-      HLogger.warn "Missing pager_duty_token in Config. Skipping alerts."
+    unless @config['pager_duty_token']
+      HLogger.warn 'Missing pager_duty_token in Config. Skipping alerts.'
       return
     end
 
-    extra = body.extra
-    description = body.description
-    incident_key = body.topic
-
-    if not extra.nil?
-      if extra.topic != ""
-        incident_key = extra.topic
-      end
-
-      if extra.description != ""
-        description = extra.description
-      end
-    end
-
-    incident_key ||= SecureRandom.hex
-    description = get_description description
-
-    extra['trceback'] = body.traceback
-
     connection.trigger(
-      description,
-      incident_key: incident_key,
+      get_description(body),
+      incident_key: get_topic(body),
       client:       @name,
-      details:      extra
+      details:      body
     )
 
     yield if block_given?
