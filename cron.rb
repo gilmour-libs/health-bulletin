@@ -103,7 +103,7 @@ class BaseCron
       timestamp: Time.now.getutc
     }
 
-    payload = { backtrace: describe, code: 500 }
+    payload = { backtrace: description, code: 500 }
     payload.merge!(opts)
     @@reporter.send_traceback(Mash.new(payload))
   end
