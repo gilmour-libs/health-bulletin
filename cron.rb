@@ -147,15 +147,17 @@ class HealthCron < BaseCron
       end
 
       if known_hosts.length > 0
-        inactive_hosts = []
+        inactive_hosts = {}
 
         wg = WaitGroup.new
         wg.add known_hosts.length
 
         known_hosts.each do |host, topic|
           opts = { timeout: 60, confirm_subscriber: true }
-          @backend.publish('ping', topic, opts) do |_, code|
-            inactive_hosts.push(host) if code != 200
+          @backend.publish('ping', topic, opts) do |data, code|
+            if code != 200
+              inactive_hosts[host] = { "code" => code, "data" => data }
+            end
             wg.done
           end
         end
