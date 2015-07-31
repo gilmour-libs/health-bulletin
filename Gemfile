@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'rspec', '~> 3.0'
-gem 'gilmour', '~> 0.2.8'
+gem 'gilmour', '~> 0.3.4'
 gem 'trollop'
 
 group :test do
@@ -10,4 +10,4 @@ end
 
 gem 'pagerduty'
 gem 'eventmachine_httpserver', :require => 'evma_httpserver'
-gem 'em-hiredis', git: 'https://github.com/adityagodbole/em-hiredis', branch: 'master'
+gem 'gilmour-em-hiredis', '~> 0.3.1'

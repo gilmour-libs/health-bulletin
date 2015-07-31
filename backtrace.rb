@@ -63,12 +63,16 @@ class PagerDutySender < Backtrace
       return
     end
 
-    connection.trigger(
-      get_description(body),
-      incident_key: get_topic(body),
-      client:       @name,
-      details:      body
-    )
+    begin
+      connection.trigger(
+        get_description(body),
+        incident_key: get_topic(body),
+        client:       @name,
+        details:      body
+      )
+    rescue Net::HTTPServerException => error
+      HLogger.error "Paging failed. Code #{error.response.code}, Message #{error.response.message} Reason: #{error.response.body}"
+    end
 
     yield if block_given?
   end
