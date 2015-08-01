@@ -35,7 +35,7 @@ class Backtrace
 
   def get_description(body)
     description = (body.is_a? Mash) ? body.backtrace : ''
-    description ||= "Error caught by #{@name}"
+    description = "Error caught by #{@name}" if description.empty?
     description[0..1024]
   end
 
@@ -71,7 +71,7 @@ class PagerDutySender < Backtrace
         details:      body
       )
     rescue Net::HTTPServerException => error
-      HLogger.error "Paging failed. Code #{error.response.code}, Message #{error.response.message} Reason: #{error.response.body}"
+      HLogger.error "Paging failed. Code #{error.response.code}, Message #{error.response.message} Reason: #{error.response.body} Body: #{body}"
     end
 
     yield if block_given?
