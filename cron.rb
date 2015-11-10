@@ -3,11 +3,12 @@ require 'mash'
 require 'logger'
 require 'singleton'
 
+require 'gilmour/waiter'
+
 require_relative './subpub'
 require_relative './backtrace'
 require_relative './lib/cli'
 require_relative './lib/logger'
-require_relative './lib/wait_group'
 
 module Cron
   @@jobs = []
@@ -116,7 +117,7 @@ class TopicCron < BaseCron
 
     essential_topics = []
 
-    wg = WaitGroup.new
+    wg = Gilmour::Waiter.new
     wg.add topics.length
 
     topics.each do |topic|
@@ -139,37 +140,44 @@ end
 class HealthCron < BaseCron
   def _run
     @backend.publisher.hgetall @backend.class::GilmourHealthKey do |r|
-      known_hosts = Hash.new(0)
+      EM.defer do
+        known_hosts = Hash.new(0)
 
-      r.each_slice(2) do |slice|
-        host = slice[0]
-        known_hosts[host] = "gilmour.health.#{host}"
-      end
-
-      if known_hosts.length > 0
-        inactive_hosts = {}
-
-        wg = WaitGroup.new
-        wg.add known_hosts.length
-
-        known_hosts.each do |host, topic|
-          opts = { timeout: 60, confirm_subscriber: true }
-          @backend.publish('ping', topic, opts) do |data, code|
-            if code != 200
-              inactive_hosts[host] = { "code" => code, "data" => data }
-            end
-            wg.done
-          end
+        r.each_slice(2) do |slice|
+          host = slice[0]
+          known_hosts[host] = "gilmour.health.#{host}"
         end
 
-        wg.wait do
-          if inactive_hosts.length > 0
+        unless known_hosts.empty?
+          inactive_hosts = {}
+
+          3.times do |_|
+            next if known_hosts.empty?
+
+            wg = Gilmour::Waiter.new
+            wg.add known_hosts.length
+
+            known_hosts.each do |host, topic|
+              opts = { timeout: 60, confirm_subscriber: true }
+              @backend.publish('ping', topic, opts) do |_, code|
+                known_hosts.delete host if code != 499
+                if code != 200
+                  inactive_hosts[host] = { 'code' => code, 'data' => '' }
+                end
+                wg.done
+              end
+            end
+
+            wg.wait
+          end
+
+          unless inactive_hosts.empty?
             msg = 'Unreachable hosts'
             extra = { 'hosts' => inactive_hosts }
             emit_error msg, extra
           end
-        end
 
+        end
       end
     end
   end
