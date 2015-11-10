@@ -1,19 +1,14 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    amq-protocol (1.9.2)
-    amqp (1.5.0)
-      amq-protocol (>= 1.9.2)
-      eventmachine
     diff-lcs (1.2.5)
-    eventmachine (1.0.7)
+    eventmachine (1.0.8)
     eventmachine_httpserver (0.2.1)
-    gilmour (0.3.4)
-      amqp
+    gilmour (0.4.7)
       gilmour-em-hiredis
       mash
       redis
-    gilmour-em-hiredis (0.3.1)
+    gilmour-em-hiredis (0.3.3)
       eventmachine (~> 1.0)
       hiredis (~> 0.5.0)
     given_core (3.7.1)
@@ -48,7 +43,7 @@ PLATFORMS
 
 DEPENDENCIES
   eventmachine_httpserver
-  gilmour (~> 0.3.4)
+  gilmour (~> 0.4.7)
   gilmour-em-hiredis (~> 0.3.1)
   pagerduty
   rspec (~> 3.0)
@@ -56,4 +51,4 @@ DEPENDENCIES
   trollop
 
 BUNDLED WITH
-   1.10.2
+   1.10.6
