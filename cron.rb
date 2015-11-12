@@ -107,6 +107,8 @@ class TopicCron < BaseCron
     topics = CLI::Args['essential_topics']
     return unless topics.is_a?(Array) && !topics.empty?
 
+    HLogger.debug 'Ensuring topics have atleast one subscriber'
+
     EM.defer do
       essential_topics = []
 
@@ -138,6 +140,8 @@ class HealthCron < BaseCron
   def _run
     @backend.publisher.hgetall @backend.class::GilmourHealthKey do |r|
       EM.defer do
+        HLogger.debug 'Ensuring that gilmour servers respond to health ping'
+
         known_hosts = Hash.new(0)
 
         r.each_slice(2) do |slice|
