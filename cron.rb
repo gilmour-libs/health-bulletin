@@ -10,9 +10,13 @@ require_relative './backtrace'
 require_relative './lib/cli'
 require_relative './lib/logger'
 
+# Base module that provides common Cron functionalities.
 module Cron
   @@jobs = []
 
+  # CHeck to ensure that Health Monitor can speak with Redis itself.
+  # There have been instances where the monitor is deployed inside a VPC
+  # instance that cannot talk to redis itself, and that's bad.
   class RedisCheck
     def threshold
       latency = CLI::Args['redis_health_interval']
@@ -28,15 +32,9 @@ module Cron
     end
 
     def emit_error(description)
-      opts = {
-        topic: self.class.name,
-        description: description,
-        sender: @backend.ident,
-        multi_process: false,
-        code: 500,
-        timestamp: Time.now.getutc,
-        config: CLI::Args['redis']
-      }
+      opts = { topic: self.class.name, description: description,
+               sender: @backend.ident, multi_process: false, code: 500,
+               timestamp: Time.now.getutc, config: CLI::Args['redis'] }
 
       payload = { traceback: '', extra: opts }
       @reporter.send_traceback(Mash.new(payload))
@@ -44,7 +42,6 @@ module Cron
 
     def start
       if @backend.publisher.nil?
-        # HLogger.debug '....................#...........'
         emit_error 'Health monitor cannot connect to Redis'
         exit
       end
@@ -73,6 +70,7 @@ module Cron
   end
 end
 
+# Common cron class to expose an error emission interface.
 class BaseCron
   @@reporter = PagerDutySender.new(CLI::Args['health_reporting'])
 
@@ -82,27 +80,20 @@ class BaseCron
   end
 
   def run
-    begin
-      _run
-    rescue Exception => e
-      HLogger.exception e
-    end
+    _run
+  rescue Exception => e
+    HLogger.exception e
   end
 
-  def emit_error(description, extra=nil)
+  def emit_error(description, extra = nil)
     unless description.is_a?(String)
       HLogger.error 'Description must be a valid non-empty string'
       return
     end
 
-    opts = {
-      topic: self.class.name,
-      request_data: {},
-      userdata: extra || {},
-      sender: @backend.ident,
-      multi_process: false,
-      timestamp: Time.now.getutc
-    }
+    opts = { topic: self.class.name, request_data: {},
+             userdata: extra || {}, sender: @backend.ident,
+             multi_process: false, timestamp: Time.now.getutc }
 
     payload = { backtrace: description, code: 500 }
     payload.merge!(opts)
@@ -110,33 +101,39 @@ class BaseCron
   end
 end
 
+# Manager to ensure that essential topics have atleast one subscriber.
 class TopicCron < BaseCron
   def _run
     topics = CLI::Args['essential_topics']
-    return unless topics.is_a?(Array) || topics.length <= 0
+    return unless topics.is_a?(Array) && !topics.empty?
 
-    essential_topics = []
+    EM.defer do
+      essential_topics = []
 
-    wg = Gilmour::Waiter.new
-    wg.add topics.length
+      wg = Gilmour::Waiter.new
+      wg.add topics.length
 
-    topics.each do |topic|
-      @backend.publisher.pubsub('numsub', topic) do |_, num|
-        essential_topics.push(topic) if num == 0
-        wg.done
+      topics.each do |topic|
+        @backend.publisher.pubsub('numsub', topic) do |_, num|
+          essential_topics.push(topic) if num == 0
+          wg.done
+        end
       end
-    end
 
-    wg.wait do
-      if essential_topics.length > 0
-        msg = 'Required topics do not have any subscriber.'
-        extra = { 'topics' => essential_topics }
-        emit_error msg, extra
+      wg.wait do
+        if essential_topics.length > 0
+          msg = 'Required topics do not have any subscriber.'
+          extra = { 'topics' => essential_topics }
+          emit_error msg, extra
+        end
       end
     end
   end
 end
 
+# Manager to ensure that all gilmour servers respond to health pings within a
+# finite timeout. Server is declared dead if it fails to respond to 3
+# consecutive health pings.
 class HealthCron < BaseCron
   def _run
     @backend.publisher.hgetall @backend.class::GilmourHealthKey do |r|
