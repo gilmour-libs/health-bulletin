@@ -152,17 +152,22 @@ class HealthCron < BaseCron
         unless known_hosts.empty?
           inactive_hosts = {}
 
-          3.times do |_|
-            next if known_hosts.empty?
+          lambda { |tries|
+            return if known_hosts.empty?
+            sleep 1 if tries < 3
 
             wg = Gilmour::Waiter.new
             wg.add known_hosts.length
 
+            HLogger.warn "[#{tries}] Checking hosts #{known_hosts}"
             known_hosts.each do |host, topic|
               opts = { timeout: 60, confirm_subscriber: true }
               @backend.publish('ping', topic, opts) do |_, code|
-                known_hosts.delete host if code != 499
-                if code != 200
+                case
+                when code == 200
+                  known_hosts.delete host
+                  inactive_hosts.delete host
+                else
                   inactive_hosts[host] = { 'code' => code, 'data' => '' }
                 end
                 wg.done
@@ -170,7 +175,10 @@ class HealthCron < BaseCron
             end
 
             wg.wait
-          end
+
+            tries -= 1
+            redo unless tries.zero?
+          }.call(3)
 
           unless inactive_hosts.empty?
             msg = 'Unreachable hosts'
