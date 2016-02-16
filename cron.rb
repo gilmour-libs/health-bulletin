@@ -159,7 +159,7 @@ class HealthCron < BaseCron
             wg = Gilmour::Waiter.new
             wg.add known_hosts.length
 
-            HLogger.warn "[#{tries}] Checking hosts #{known_hosts}"
+            HLogger.debug "[#{tries}] Checking hosts #{known_hosts}"
             known_hosts.each do |host, topic|
               opts = { timeout: 60, confirm_subscriber: true }
               @backend.publish('ping', topic, opts) do |_, code|
